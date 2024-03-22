@@ -5,17 +5,71 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using namespace std;
 using filesystem::path;
+
+const regex LIBRE{R"/(\s*#\s*include\s*<([^>]*)>\s*)/"};
+const regex HEADER{R"/(\s*#\s*include\s*"([^"]*)"\s*)/"};
 
 path operator""_p(const char* data, std::size_t sz) {
     return path(data, data + sz);
 }
 
 // напишите эту функцию
-bool Preprocess(const path& in_file, const path& out_file, const vector<path>& include_directories);
+bool Preprocess(const path& file_path, const vector<path>& include_directories, istream& source, ostream& destination) {
+    string line = ""s;
+    int line_number = 1;
+    while (getline(source, line)) {
+        smatch m, m_1;
+        if (!regex_match(line, m_1, LIBRE) && !regex_match(line, m, HEADER)) {
+            destination << line << endl;
+        } else {
+            ifstream input;
+            path path, path_1;
+            if (m.empty()) {
+                path = string(m_1[1]);
+            } else {
+                path = string(m[1]);
+                path_1 = file_path.parent_path() / path;
+                input.open(path_1);
+            }
+            for (const auto& entry_dir : include_directories) {
+                if (input.is_open() && input) {
+                    break;
+                }
+                path_1 = entry_dir / path;
+                input.open(path_1);
+            }
+            if (!input) {
+                cout << "unknown include file "sv << path.string() << " at file "sv << file_path.string() << " at line "sv << line_number << endl;
+                return false;
+            }
+            if (!Preprocess(path_1, include_directories, input, destination)) {
+                return false;
+            }
+        }
+        ++line_number;
+    }
+    return true;
+}
+
+bool Preprocess(const path& in_file, const path& out_file, const vector<path>& include_directories) {
+    
+    ifstream input(in_file); 
+    if (!input) {
+        cerr << in_file << endl;
+        return false;
+    }
+    ofstream output(out_file);
+    if (!output) {
+        cerr << out_file << endl;
+        return false;
+    }
+    return Preprocess(in_file, include_directories, input, output);
+}
 
 string GetFileContents(string file) {
     ifstream stream(file);
