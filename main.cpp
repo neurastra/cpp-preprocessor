@@ -19,7 +19,7 @@ path operator""_p(const char* data, std::size_t sz) {
 }
 
 // напишите эту функцию
-bool Preprocess(const path& file_path, const vector<path>& include_directories, istream& source, ostream& destination) { 
+bool PreProcessing(const path& file_path, const vector<path>& include_directories, istream& source, ostream& destination) { 
     string line = ""s; 
     int line_number = 1; 
     while (getline(source, line)) { 
@@ -47,7 +47,7 @@ bool Preprocess(const path& file_path, const vector<path>& include_directories, 
                 cout << "unknown include file "sv << path.string() << " at file "sv << file_path.string() << " at line "sv << line_number << endl; 
                 return false; 
             } 
-            if (!Preprocess(path_1, include_directories, input, destination)) { 
+            if (!PreProcessing(path_1, include_directories, input, destination)) { 
                 return false; 
             } 
         } 
@@ -68,7 +68,7 @@ bool Preprocess(const path& in_file, const path& out_file, const vector<path>& i
         cerr << out_file << endl; 
         return false; 
     } 
-    return Preprocess(in_file, include_directories, input, output); 
+    return PreProcessing(in_file, include_directories, input, output); 
 } 
 
 string GetFileContents(string file) { 
